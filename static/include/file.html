@@ -1,0 +1,47 @@
+{{ define "file" }}
+<div class="flex flex-col gap-4">
+    <div class="flex flex-row items-center">
+        <h1 class="text-4xl">{{ .Stat.Name }}</h1>
+        <div class="ml-auto flex flex-row items-center gap-2">
+            <div class="font-mono text-xl bg-gray-200 p-2 border border-gray-700 rounded-sm">
+                {{ .Type }}
+            </div>
+            <div class="font-mono text-xl bg-gray-200 p-2 border border-gray-700 rounded-sm text-blue-700">
+                {{ .HumanSize }}
+            </div>
+            <div hx-post="/volume/{{.Volume.Name}}/share/{{.Path}}" hx-swap="outerHTML"
+                class="font-mono text-xl bg-gray-200 p-2 border border-gray-700 rounded-sm text-blue-700 cursor-pointer hover:text-blue-800">
+                Share Code
+            </div>
+            <a class="text-xl text-green-700 hover:text-green-800 bg-green-200 hover:bg-green-300 p-2 border border-green-600 rounded-sm"
+                href="{{call .MakeLink "download"}}">Download</a>
+            <a class="text-xl text-blue-700 hover:text-blue-800 bg-blue-200 hover:bg-blue-300 p-2 border border-blue-600 rounded-sm"
+                href="{{call .MakeLink "raw"}}">View</a>
+        </div>
+    </div>
+
+    <div class="flex justify-center h-full">
+        {{ if (call $.HasTag "image") }}
+        <img src="{{call .MakeLink "raw"}}"
+            class="object-fill max-h-full rounded-md m-auto border border-gray-500" />
+        {{end}}
+        {{ if (call $.HasTag "audio") }}
+        <audio controls>
+            <source src="{{call .MakeLink "raw"}}" type="{{ .Type }}">
+            Your browser does not support the audio element.
+        </audio>
+        {{end}}
+        {{ if (call $.HasTag "video") }}
+        <video controls>
+            <source src="{{call .MakeLink "raw" }}" type="{{ .Type }}">
+        </video>
+        {{end}}
+    </div>
+
+    {{ if .Content }}
+    <div class="border border-gray-600 bg-gray-300">
+        <pre class="p-2">{{.Content}}</pre>
+    </div>
+    {{ end }}
+</div>
+{{ end }}

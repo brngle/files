@@ -1,0 +1,14 @@
+{{define "title"}}Search{{end}}
+
+{{define "main"}}
+<div>
+    <input class="form-control" type="search" name="search" placeholder="Search Files..."
+        hx-post="/volume/{{.Volume.Name}}/search" hx-trigger="keyup changed delay:500ms, search"
+        hx-target="#search-results">
+
+    <div id="search-results">
+
+    </div>
+
+</div>
+{{end}}

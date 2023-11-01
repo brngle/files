@@ -1,0 +1,13 @@
+{{ define "topbar" }}
+<div class="border-b border-gray-600 bg-gray-400">
+    <div class="p-2 flex flex-row items-center">
+        <h1 class="text-4xl text-gray-800 mr-6">
+            <a href="/">Files</a>
+        </h1>
+        <div class="ml-auto" hx-get="/user" hx-trigger="load">
+            ...
+        </div>
+
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,21 @@
+<html>
+
+<head>
+    <title>{{template "title" .}} - files</title>
+    <link href="/static/index.css" rel="stylesheet">
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.6"
+        integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div>
+        {{template "topbar" .}}
+        <div class="p-2">
+            {{template "main" .}}
+        </div>
+    </div>
+</body>
+
+</html>

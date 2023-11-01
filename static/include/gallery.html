@@ -1,0 +1,15 @@
+{{define "gallery"}}
+<div class="flex flex-col divide-y divide-gray-900">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {{range .Entries}}
+        {{if (.HasTag "image")}}
+        <div>
+            <a href="/volume/{{$.Volume.Name}}/browse/{{.Path}}">
+                <img class="h-auto max-w-full rounded-lg" src="/volume/{{$.Volume.Name}}/browse/{{.Path}}?raw" alt="">
+            </a>
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+</div>
+{{end}}

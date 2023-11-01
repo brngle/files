@@ -1,0 +1,13 @@
+{{define "title"}}{{ .Volume.Name }}{{end}}
+
+{{define "main"}}
+{{if .Stat.IsDir}}
+{{ if .Gallery }}
+{{template "gallery" .}}
+{{else}}
+{{template "filelist" .}}
+{{end}}
+{{else}}
+{{template "file" .}}
+{{end}}
+{{end}}

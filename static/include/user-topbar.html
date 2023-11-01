@@ -1,0 +1,9 @@
+{{define "user-topbar"}}
+<div>
+    {{ if not (eq $ "0") }}
+    <a href="/discord/logout">Logout</a>
+    {{ else }}
+    <a href="/discord/login">Login</a>
+    {{ end }}
+</div>
+{{end}}
