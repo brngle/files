@@ -12,6 +12,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.3
 	github.com/gorilla/sessions v1.2.1
 	github.com/hashicorp/hcl/v2 v2.19.1
+	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/sqids/sqids-go v0.4.1
 	github.com/thejerf/suture/v4 v4.0.2
 	github.com/zclconf/go-cty v1.14.1

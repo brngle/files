@@ -2,13 +2,11 @@
 
 {{define "main"}}
 <div>
-    <input class="form-control" type="search" name="search" placeholder="Search Files..."
-        hx-post="/volume/{{.Volume.Name}}/search" hx-trigger="keyup changed delay:500ms, search"
-        hx-target="#search-results">
-
+    <input class="form-control border-gray-900 border p-0.5 rounded-sm hover:bg-gray-100 bg-gray-50 mb-2" type="search"
+        name="search" placeholder="Search Files..." hx-post="/volume/{{.Volume.Name}}/search?path={{.Path}}"
+        hx-trigger="keyup changed delay:500ms, search" hx-target="#search-results">
     <div id="search-results">
 
     </div>
-
 </div>
 {{end}}

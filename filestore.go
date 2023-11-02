@@ -126,6 +126,20 @@ type VolumeEntry struct {
 	Type      string
 }
 
+func NewVolumeEntryFromStat(path string, info fs.FileInfo) *VolumeEntry {
+	mtraw := mime.TypeByExtension(filepath.Ext(path))
+	mimetype, _, _ := mime.ParseMediaType(mtraw)
+
+	return &VolumeEntry{
+		Name:      info.Name(),
+		Path:      path,
+		Size:      info.Size(),
+		HumanSize: humanize.Bytes(uint64(info.Size())),
+		IsDir:     info.IsDir(),
+		Type:      mimetype,
+	}
+}
+
 func (e *VolumeEntry) HasTag(tag string) bool {
 	return hasMediaTag(e.Type, tag)
 }
@@ -139,6 +153,20 @@ func (v *Volume) WalkDir(p string, fn func(string, fs.DirEntry, error) error) er
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		return fn(filepath.Join(p, strings.TrimPrefix(path, root)), d, err)
 	})
+}
+
+func (v *Volume) Entry(path string) (*VolumeEntry, error) {
+	p, err := v.path(path)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := os.Stat(p)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewVolumeEntryFromStat(path, info), nil
 }
 
 func (v *Volume) Entries(path string) ([]*VolumeEntry, error) {
@@ -159,17 +187,7 @@ func (v *Volume) Entries(path string) ([]*VolumeEntry, error) {
 			return nil, err
 		}
 
-		mtraw := mime.TypeByExtension(filepath.Ext(info.Name()))
-		mimetype, _, _ := mime.ParseMediaType(mtraw)
-
-		result = append(result, &VolumeEntry{
-			Name:      info.Name(),
-			Path:      filepath.Join(path, info.Name()),
-			Size:      info.Size(),
-			HumanSize: humanize.Bytes(uint64(info.Size())),
-			IsDir:     info.IsDir(),
-			Type:      mimetype,
-		})
+		result = append(result, NewVolumeEntryFromStat(filepath.Join(path, info.Name()), info))
 	}
 
 	sort.Slice(result, func(i, j int) bool {
