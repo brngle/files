@@ -196,6 +196,9 @@ func (h *HTTPService) router() http.Handler {
 
 	rtr.Get("/s/{shareCode}", h.routeGetShareCode)
 
+	rtr.Get("/volume/{volumeName}/upload", h.routeGetUpload)
+	rtr.Post("/volume/{volumeName}/upload", h.routePostUpload)
+
 	rtr.Get("/volume/{volumeName}/browse/*", h.routeGetVolume)
 	rtr.Post("/volume/{volumeName}/share/*", h.routePostShareVolume)
 	rtr.Post("/volume/{volumeName}/sharex", h.routePostSharex)

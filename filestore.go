@@ -101,6 +101,14 @@ func (v *Volume) Open(p string) (*os.File, error) {
 	return os.Open(path)
 }
 
+func (v *Volume) OpenFile(p string, flag int, mode os.FileMode) (*os.File, error) {
+	path, err := v.path(p)
+	if err != nil {
+		return nil, err
+	}
+	return os.OpenFile(path, flag, mode)
+}
+
 func (v *Volume) MkdirAll(p string, perm fs.FileMode) error {
 	path, err := v.path(p)
 	if err != nil {
