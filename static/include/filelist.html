@@ -14,12 +14,16 @@
         </a>
         {{ end }}
         <div class="ml-auto px-2 flex flex-row gap-2">
+            {{if ($.Volume.HasFeature "search")}}
             <a class="bg-blue-200 border border-blue-700 rounded-sm text-blue-700 cursor-pointer hover:text-blue-800 p-0.5"
                 href="/volume/{{$.Volume.Name}}/search?path={{$.Path}}">Search</a>
+            {{end}}
             <a class="bg-blue-200 border border-blue-700 rounded-sm text-blue-700 cursor-pointer hover:text-blue-800 p-0.5"
                 href="/volume/{{$.Volume.Name}}/browse/{{$.Path}}?gallery">Gallery</a>
+            {{if ($.Volume.HasFeature "compress")}}
             <a class="bg-blue-200 border border-blue-700 rounded-sm text-blue-700 cursor-pointer hover:text-blue-800 p-0.5"
                 href="/volume/{{$.Volume.Name}}/browse/{{$.Path}}?compress=zip">ZIP</a>
+            {{end}}
             <div hx-post="/volume/{{$.Volume.Name}}/share/{{$.Path}}" hx-swap="outerHTML"
                 class="font-mono bg-gray-200 p-0.5 border border-gray-700 rounded-sm text-blue-700 cursor-pointer hover:text-blue-800">
                 Share Code
