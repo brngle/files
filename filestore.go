@@ -5,7 +5,6 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
@@ -197,19 +196,6 @@ func (v *Volume) Entries(path string) ([]*VolumeEntry, error) {
 
 		result = append(result, NewVolumeEntryFromStat(filepath.Join(path, info.Name()), info))
 	}
-
-	sort.Slice(result, func(i, j int) bool {
-		ii := result[i]
-		jj := result[j]
-
-		if ii.IsDir && !jj.IsDir {
-			return true
-		} else if !ii.IsDir && jj.IsDir {
-			return false
-		}
-
-		return ii.Name < jj.Name
-	})
 
 	return result, nil
 }

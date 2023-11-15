@@ -500,6 +500,39 @@ func (h *HTTPService) servePath(w http.ResponseWriter, r *http.Request, volume *
 			return
 		}
 
+		sortDir := r.URL.Query().Get("sort-dir")
+		sortBy := r.URL.Query().Get("sort-by")
+		sortFn := func(a, b *VolumeEntry) bool {
+			return a.Name < b.Name
+		}
+
+		if sortBy == "size" {
+			sortFn = func(a, b *VolumeEntry) bool {
+				return a.Size < b.Size
+			}
+		}
+
+		if sortDir == "desc" {
+			priorSortFn := sortFn
+			sortFn = func(a, b *VolumeEntry) bool {
+				return !priorSortFn(a, b)
+			}
+		}
+
+		sort.Slice(entries, func(i, j int) bool {
+			ii := entries[i]
+			jj := entries[j]
+
+			// directories always end up on top?
+			if ii.IsDir && !jj.IsDir {
+				return true
+			} else if !ii.IsDir && jj.IsDir {
+				return false
+			}
+
+			return sortFn(ii, jj)
+		})
+
 		if len(entries) > 1000 {
 			entries = entries[:1000]
 		}
