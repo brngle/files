@@ -186,7 +186,7 @@ func (h *HTTPService) router() http.Handler {
 
 	// discord stuff
 	if h.config.Discord != nil {
-		setupDiscord(h.config.Discord, h.config.HTTP.URL)
+		setupDiscord(h.config.Discord, h.config.HTTP.BaseURL())
 		rtr.Get("/discord/logout", h.discordGetLogoutRoute)
 		rtr.Get("/discord/login", h.discordGetLoginRoute)
 		rtr.Get("/discord/login/callback", h.discordGetLoginCallbackRoute)
@@ -340,13 +340,7 @@ func (h *HTTPService) routePostShareVolume(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	url := h.config.HTTP.ShareURL
-	if url != "" {
-		url = fmt.Sprintf(url, shareCode.Code())
-	} else {
-		url = shareCode.URL(h.config.HTTP.URL)
-	}
-
+	url := shareCode.URL(h.config.HTTP)
 	h.templateFragment(w, "share-code", url)
 	return
 }

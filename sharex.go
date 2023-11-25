@@ -1,7 +1,6 @@
 package files
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -63,13 +62,7 @@ func (h *HTTPService) routePostSharex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := h.config.HTTP.ShareURL
-	if url != "" {
-		url = fmt.Sprintf(url, shareCode.Code())
-	} else {
-		url = shareCode.URL(h.config.HTTP.URL)
-	}
-
+	url := shareCode.URL(h.config.HTTP)
 	gores.JSON(w, http.StatusOK, map[string]string{
 		"link": url,
 	})

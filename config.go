@@ -1,6 +1,8 @@
 package files
 
 import (
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/zclconf/go-cty/cty"
@@ -19,6 +21,14 @@ type HTTPConfig struct {
 	ShareURL string `hcl:"share_url,optional"`
 	Bind     string `hcl:"bind"`
 	Secret   string `hcl:"secret"`
+}
+
+func (h HTTPConfig) BaseShareURL() string {
+	return strings.TrimRight(h.ShareURL, "/")
+}
+
+func (h HTTPConfig) BaseURL() string {
+	return strings.TrimRight(h.URL, "/")
 }
 
 type VolumeConfig struct {

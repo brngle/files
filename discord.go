@@ -155,7 +155,7 @@ func setupDiscord(config *DiscordConfig, baseURL string) {
 	cachedConfig = &oauth2.Config{
 		ClientID:     config.ClientId,
 		ClientSecret: config.ClientSecret,
-		RedirectURL:  baseURL + "discord/login/callback",
+		RedirectURL:  baseURL + "/discord/login/callback",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  authURL,
 			TokenURL: tokenURL,

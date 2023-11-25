@@ -63,8 +63,14 @@ func (s *ShareCode) Code() string {
 	return id
 }
 
-func (s *ShareCode) URL(root string) string {
-	return fmt.Sprintf("%ss/%s?raw", root, s.Code())
+func (s *ShareCode) URL(httpConfig *HTTPConfig) string {
+	url := httpConfig.BaseShareURL()
+	if url != "" {
+		url = fmt.Sprintf(url, s.Code())
+	} else {
+		url = fmt.Sprintf("%s/s/%s?raw", httpConfig.BaseURL(), s.Code())
+	}
+	return url
 }
 
 func MakeShareCode(volume, path string) (*ShareCode, error) {
