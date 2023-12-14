@@ -2,12 +2,15 @@
 
 {{define "main"}}
 <div>
-    <form id='form' hx-encoding='multipart/form-data' hx-post="/volume/{{.Volume.Name}}/upload">
-        <input type="hidden" name="path" value="{{.Path}}">
-        <input type='file' name='file'>
-        <button>
-            Upload
-        </button>
+    <form id='form' hx-encoding='multipart/form-data' hx-post="/volume/{{.Volume.Name}}/upload"
+        class="flex flex-col gap-2 max-w-2xl">
+        <div class="flex flex-row">
+            <input type="hidden" name="path" value="{{.Path}}">
+            <input type='file' name='file'>
+            <button class="bg-green-200 border border-green-700 rounded-sm text-green-700 hover:text-green-800 p-0.5">
+                Upload
+            </button>
+        </div>
         <progress id='progress' value='0' max='100'></progress>
     </form>
     <script>

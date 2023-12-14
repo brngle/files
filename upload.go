@@ -93,6 +93,5 @@ func (h *HTTPService) routePostUpload(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("%s/volume/%s/browse/%s", h.config.HTTP.BaseURL(), volume.Name, filepath.Join(path, handler.Filename))
 	w.Header().Add("HX-Redirect", url)
-	// http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	gores.NoContent(w)
 }
