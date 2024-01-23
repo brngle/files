@@ -1,5 +1,5 @@
 /config.json
-files-web-server
+/files-web-server
 config.hcl
 /dist
 /files.db
