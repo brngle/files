@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/dustin/go-humanize"
@@ -13,15 +14,6 @@ import (
 
 type FileStore struct {
 	Volumes map[string]*Volume
-}
-
-type Volume struct {
-	Name    string
-	Path    string
-	Privacy string
-
-	Features map[string]struct{}
-	UserIds  map[string]struct{}
 }
 
 func NewFileStore(config *Config) *FileStore {
@@ -60,6 +52,19 @@ func NewFileStore(config *Config) *FileStore {
 	return &FileStore{
 		Volumes: volumes,
 	}
+}
+
+func (f *FileStore) GetVolume(name string) *Volume {
+	return f.Volumes[name]
+}
+
+type Volume struct {
+	Name    string
+	Path    string
+	Privacy string
+
+	Features map[string]struct{}
+	UserIds  map[string]struct{}
 }
 
 func (v *Volume) HasUserId(userId string) bool {
@@ -131,6 +136,7 @@ type VolumeEntry struct {
 	HumanSize string
 	IsDir     bool
 	Type      string
+	ModTime   time.Time
 }
 
 func NewVolumeEntryFromStat(path string, info fs.FileInfo) *VolumeEntry {
@@ -144,6 +150,7 @@ func NewVolumeEntryFromStat(path string, info fs.FileInfo) *VolumeEntry {
 		HumanSize: humanize.Bytes(uint64(info.Size())),
 		IsDir:     info.IsDir(),
 		Type:      mimetype,
+		ModTime:   info.ModTime(),
 	}
 }
 

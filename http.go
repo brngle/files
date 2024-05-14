@@ -410,6 +410,23 @@ func (h *HTTPService) servePath(w http.ResponseWriter, r *http.Request, volume *
 		return
 	}
 
+	hash := r.URL.Query().Get("hash")
+	if hash != "" && info.IsDir() {
+		gores.Error(w, http.StatusBadRequest, "cannot hash directory")
+		return
+	} else if hash == "sha256" {
+		hashContents, err := generateHash(volume, path)
+		if err != nil {
+			gores.Error(w, http.StatusInternalServerError, "failed to hash file")
+			return
+		}
+		gores.String(w, http.StatusOK, hashContents)
+		return
+	} else if hash != "" {
+		gores.Error(w, http.StatusBadRequest, "invalid hash requested")
+		return
+	}
+
 	download := r.URL.Query().Has("download")
 	raw := r.URL.Query().Has("raw")
 
@@ -504,6 +521,11 @@ func (h *HTTPService) servePath(w http.ResponseWriter, r *http.Request, volume *
 			sortFn = func(a, b *VolumeEntry) bool {
 				return a.Size < b.Size
 			}
+		} else if sortBy == "modtime" {
+			sortFn = func(a, b *VolumeEntry) bool {
+				return a.ModTime.Before(b.ModTime)
+			}
+
 		}
 
 		if sortDir == "desc" {
