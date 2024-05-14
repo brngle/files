@@ -45,8 +45,9 @@ type DiscordUser struct {
 }
 
 func (h *HTTPService) discordGetLogoutRoute(w http.ResponseWriter, r *http.Request) {
-	session := h.getSession(w, r)
+	session := h.authStore.GetSession(r)
 	if session == nil {
+		gores.Error(w, http.StatusBadRequest, "invalid session")
 		return
 	}
 
@@ -57,8 +58,9 @@ func (h *HTTPService) discordGetLogoutRoute(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *HTTPService) discordGetLoginRoute(w http.ResponseWriter, r *http.Request) {
-	session := h.getSession(w, r)
+	session := h.authStore.GetSession(r)
 	if session == nil {
+		gores.Error(w, http.StatusBadRequest, "invalid session")
 		return
 	}
 
@@ -77,8 +79,9 @@ func (h *HTTPService) discordGetLoginRoute(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *HTTPService) discordGetLoginCallbackRoute(w http.ResponseWriter, r *http.Request) {
-	session := h.getSession(w, r)
+	session := h.authStore.GetSession(r)
 	if session == nil {
+		gores.Error(w, http.StatusBadRequest, "invalid session")
 		return
 	}
 

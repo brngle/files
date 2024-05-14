@@ -16,6 +16,15 @@ type Config struct {
 	Roles   []RoleConfig   `hcl:"role,block"`
 }
 
+func (c *Config) IsAdmin(discordId string) bool {
+	for _, role := range c.Roles {
+		if role.Admin && role.HasUserId(discordId) {
+			return true
+		}
+	}
+	return false
+}
+
 type HTTPConfig struct {
 	URL      string `hcl:"url,optional"`
 	ShareURL string `hcl:"share_url,optional"`

@@ -4,8 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -20,11 +18,9 @@ import (
 	"time"
 
 	"github.com/alioygur/gores"
-	goalone "github.com/bwmarrin/go-alone"
 	"github.com/dustin/go-humanize"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/gorilla/sessions"
 )
 
 var mediaTags = map[string][]string{
@@ -81,93 +77,20 @@ func getTemplatePaths() []string {
 }
 
 type HTTPService struct {
-	done chan struct{}
+	fileStore *FileStore
+	config    *Config
+	authStore *AuthStore
 
-	signer       *goalone.Sword
-	sessionStore *sessions.CookieStore
-	fileStore    *FileStore
-	config       *Config
+	done chan struct{}
 }
 
 func NewHTTPService(config *Config, fileStore *FileStore) *HTTPService {
 	return &HTTPService{
-		signer:       goalone.New([]byte(config.HTTP.Secret)),
-		sessionStore: sessions.NewCookieStore([]byte(config.HTTP.Secret)),
-		fileStore:    fileStore,
-		config:       config,
-		done:         make(chan struct{}),
+		fileStore: fileStore,
+		config:    config,
+		authStore: NewAuthStore(fileStore, config),
+		done:      make(chan struct{}),
 	}
-}
-
-func (h *HTTPService) getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
-	session, err := h.sessionStore.Get(r, "session")
-	if err != nil {
-		gores.Error(w, http.StatusInternalServerError, "invalid or corrupted session")
-		return nil
-	}
-	return session
-}
-
-func (h *HTTPService) withUser(w http.ResponseWriter, r *http.Request, must bool) string {
-	authParts := strings.Split(r.Header.Get("Authorization"), " ")
-	if len(authParts) > 1 && authParts[0] == "Token" {
-		userId := h.validateToken(authParts[1])
-		if userId != "" {
-			return userId
-		}
-	}
-
-	session := h.getSession(w, r)
-	if session == nil {
-		return ""
-	}
-
-	var discordUserId string = "0"
-	raw, ok := session.Values["discord-user-id"]
-	if raw != nil && ok {
-		discordUserId = raw.(string)
-	}
-
-	if discordUserId == "" && must {
-		gores.Error(w, http.StatusUnauthorized, "unauthorized")
-		return ""
-	}
-
-	return discordUserId
-}
-
-func (h *HTTPService) isAdmin(userId string) bool {
-	for _, role := range h.config.Roles {
-		if role.HasUserId(userId) && role.Admin {
-			return true
-		}
-	}
-	return false
-}
-
-func (h *HTTPService) genToken(userId string) string {
-	data, err := json.Marshal(userId)
-	if err != nil {
-		return ""
-	}
-	return base64.RawURLEncoding.EncodeToString(h.signer.Sign(data))
-}
-
-func (h *HTTPService) validateToken(token string) string {
-	decoded, err := base64.RawURLEncoding.DecodeString(token)
-	if err != nil {
-		return ""
-	}
-	raw, err := h.signer.Unsign(decoded)
-	if err != nil {
-		return ""
-	}
-	var result string
-	err = json.Unmarshal(raw, &result)
-	if err != nil {
-		return ""
-	}
-	return result
 }
 
 func (h *HTTPService) Stop() {
@@ -227,27 +150,13 @@ func (h *HTTPService) Serve(ctx context.Context) error {
 }
 
 func (h *HTTPService) routeGetIndex(w http.ResponseWriter, r *http.Request) {
-	userId := h.withUser(w, r, false)
-	if userId == "" {
-		return
-	}
+	auth := h.authStore.Check(r)
 
 	volumes := []*Volume{}
 	for _, volume := range h.fileStore.Volumes {
-		if volume.Privacy != "public" && userId == "0" {
-			continue
+		if volume.Privacy == "public" || (auth != nil && auth.CanAccess(volume, "", false)) {
+			volumes = append(volumes, volume)
 		}
-
-		// only admins can see unlisted volumes
-		if volume.Privacy == "unlisted" && !h.isAdmin(userId) {
-			continue
-		}
-
-		if volume.Privacy == "private" && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-			continue
-		}
-
-		volumes = append(volumes, volume)
 	}
 
 	sort.Slice(volumes, func(i, j int) bool {
@@ -263,27 +172,32 @@ func (h *HTTPService) routeGetIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTPService) routeGetToken(w http.ResponseWriter, r *http.Request) {
-	userId := h.withUser(w, r, false)
-	if userId == "" {
-		return
-	}
+	auth := h.authStore.Check(r)
 
-	if userId == "0" {
+	if auth == nil {
 		gores.Error(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	token := h.genToken(userId)
+	discordUserId := auth.DiscordUserId()
+	if discordUserId == "" {
+		gores.Error(w, http.StatusBadRequest, "can only generate tokens for user authentication")
+		return
+	}
+
+	token := h.authStore.GenerateUserToken(discordUserId)
 	h.template(w, "static/token.html", token)
 }
 
 func (h *HTTPService) routeGetUser(w http.ResponseWriter, r *http.Request) {
-	userId := h.withUser(w, r, false)
-	if userId == "" {
+	auth := h.authStore.Check(r)
+
+	if auth == nil {
+		h.templateFragment(w, "user-topbar", "0")
 		return
 	}
 
-	h.templateFragment(w, "user-topbar", userId)
+	h.templateFragment(w, "user-topbar", auth.DiscordUserId())
 }
 
 func (h *HTTPService) routeGetShareCode(w http.ResponseWriter, r *http.Request) {
@@ -300,25 +214,14 @@ func (h *HTTPService) routeGetShareCode(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *HTTPService) routePostShareVolume(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, true)
-	if userId == "" {
+	volume, _ := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
 		return
 	}
 
 	path, err := url.PathUnescape(chi.URLParam(r, "*"))
 	if err != nil {
 		panic(err)
-	}
-
-	if volume.Privacy == "private" && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
 	}
 
 	// make sure the path exists
@@ -329,7 +232,6 @@ func (h *HTTPService) routePostShareVolume(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		log.Printf("err = %v", err)
 		gores.Error(w, http.StatusInternalServerError, "failed to stat path")
 		return
 	}
@@ -346,14 +248,8 @@ func (h *HTTPService) routePostShareVolume(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *HTTPService) routeGetVolume(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, false)
-	if userId == "" {
+	volume, auth := h.authStore.GetVolume(w, r, false)
+	if volume == nil {
 		return
 	}
 
@@ -362,34 +258,9 @@ func (h *HTTPService) routeGetVolume(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	var shareCode *ShareCode
-	shareCodeRaw := r.URL.Query().Get("sc")
-	if shareCodeRaw != "" {
-		it, err := GetShareCode(shareCodeRaw)
-		if err != nil {
-			gores.Error(w, http.StatusBadRequest, "invalid share code")
-			return
-		}
-
-		if it.Volume != volume.Name || !strings.HasPrefix(path, it.Path) {
-			gores.Error(w, http.StatusBadRequest, "invalid share path")
-			return
-		}
-
-		shareCode = it
-	}
-
-	if volume.Privacy == "private" && !volume.HasUserId(userId) && !h.isAdmin(userId) && shareCode == nil {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	canList := true
-	if volume.Privacy == "unlisted" && !volume.HasUserId(userId) && !h.isAdmin(userId) && shareCode == nil {
-		canList = false
-	}
-
-	h.servePath(w, r, volume, path, canList, shareCode)
+	// TODO: pass through sharecode
+	// shareCodeRaw := r.URL.Query().Get("sc")
+	h.servePath(w, r, volume, path, volume.Privacy != "unlisted" || auth != nil, nil)
 }
 
 func (h *HTTPService) servePath(w http.ResponseWriter, r *http.Request, volume *Volume, path string, canList bool, shareCode *ShareCode) {

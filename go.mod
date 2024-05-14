@@ -17,6 +17,7 @@ require (
 	github.com/thejerf/suture/v4 v4.0.2
 	github.com/zclconf/go-cty v1.14.2
 	golang.org/x/oauth2 v0.16.0
+	gorm.io/datatypes v1.2.0
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.5
 
@@ -25,6 +26,7 @@ require (
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
@@ -39,4 +41,5 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
+	gorm.io/driver/mysql v1.4.7 // indirect
 )

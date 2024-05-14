@@ -8,23 +8,11 @@ import (
 	"path/filepath"
 
 	"github.com/alioygur/gores"
-	"github.com/go-chi/chi/v5"
 )
 
 func (h *HTTPService) routeGetUpload(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, true)
-	if userId == "" {
-		return
-	}
-
-	if (volume.Privacy == "private" || volume.Privacy == "unlisted") && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
+	volume, _ := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
 		return
 	}
 
@@ -42,25 +30,14 @@ func (h *HTTPService) routeGetUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTPService) routePostUpload(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(32 << 20)
+	volume, _ := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
+		return
+	}
+
+	err := r.ParseMultipartForm(256 << 20)
 	if err != nil {
 		gores.Error(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, true)
-	if userId == "" {
-		return
-	}
-
-	if (volume.Privacy == "private" || volume.Privacy == "unlisted") && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
 		return
 	}
 

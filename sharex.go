@@ -7,23 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/alioygur/gores"
-	"github.com/go-chi/chi/v5"
 )
 
 func (h *HTTPService) routePostSharex(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, false)
-	if userId == "" {
-		return
-	}
-
-	if volume.Privacy != "public" && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
+	volume, auth := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
 		return
 	}
 
@@ -34,15 +22,19 @@ func (h *HTTPService) routePostSharex(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	path := filepath.Join(userId, fileHeader.Filename)
+	discordUserId := auth.DiscordUserId()
+	if discordUserId == "" {
+		gores.Error(w, http.StatusBadRequest, "must be authorized with a user account to use sharex")
+		return
+	}
 
-	err = volume.MkdirAll(userId, os.ModePerm)
+	err = volume.MkdirAll(discordUserId, os.ModePerm)
 	if err != nil {
 		gores.Error(w, http.StatusInternalServerError, "failed to create user directory")
 		return
-
 	}
 
+	path := filepath.Join(discordUserId, fileHeader.Filename)
 	dst, err := volume.Create(path)
 	if err != nil {
 		gores.Error(w, http.StatusInternalServerError, "failed to create file")

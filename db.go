@@ -8,6 +8,7 @@ import (
 
 	"github.com/alioygur/gores"
 	"github.com/sqids/sqids-go"
+	"gorm.io/datatypes"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -22,6 +23,7 @@ func OpenDatabase(path string) error {
 	db = it
 
 	err = db.AutoMigrate(
+		&APIKey{},
 		&ShareCode{},
 	)
 	if err != nil {
@@ -39,6 +41,15 @@ func ErrorResponse(w http.ResponseWriter, err error) {
 	}
 
 	gores.Error(w, http.StatusInternalServerError, "something went wrong")
+}
+
+type APIKeyConfig struct {
+	Volumes []string `json:"volumes"`
+}
+
+type APIKey struct {
+	Key    string                           `json:"key" gorm:"primaryKey"`
+	Config datatypes.JSONType[APIKeyConfig] `json:"config"`
 }
 
 type ShareCode struct {
@@ -105,10 +116,18 @@ func GetShareCode(code string) (*ShareCode, error) {
 	}
 
 	var shareCode ShareCode
-	err := db.Find(&shareCode, "id = ?", id[0]).Error
+	err := db.Take(&shareCode, "id = ?", id[0]).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return &shareCode, nil
+}
+
+func GetAPIKey(key string) (*APIKey, error) {
+	var apikey APIKey
+	if err := db.Take(&apikey, "key = ?", key).Error; err != nil {
+		return nil, err
+	}
+	return &apikey, nil
 }

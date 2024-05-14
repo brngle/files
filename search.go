@@ -10,7 +10,6 @@ import (
 
 	"github.com/alioygur/gores"
 	"github.com/charlievieth/fastwalk"
-	"github.com/go-chi/chi/v5"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
@@ -64,19 +63,8 @@ func (v *Volume) Search(rootPath string, query string, fuzz bool, maxResults int
 }
 
 func (h *HTTPService) routePostSearch(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, true)
-	if userId == "" {
-		return
-	}
-
-	if (volume.Privacy == "private" || volume.Privacy == "unlisted") && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
+	volume, _ := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
 		return
 	}
 
@@ -106,19 +94,8 @@ func (h *HTTPService) routePostSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HTTPService) routeGetSearch(w http.ResponseWriter, r *http.Request) {
-	volume, ok := h.fileStore.Volumes[chi.URLParam(r, "volumeName")]
-	if !ok {
-		gores.Error(w, http.StatusNotFound, "not found")
-		return
-	}
-
-	userId := h.withUser(w, r, true)
-	if userId == "" {
-		return
-	}
-
-	if (volume.Privacy == "private" || volume.Privacy == "unlisted") && !volume.HasUserId(userId) && !h.isAdmin(userId) {
-		gores.Error(w, http.StatusNotFound, "not found")
+	volume, _ := h.authStore.GetVolume(w, r, true)
+	if volume == nil {
 		return
 	}
 
