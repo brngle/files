@@ -15,6 +15,6 @@ COPY . /usr/src/files/
 
 ENV CGO_ENABLED=1
 RUN tailwindcss -i ./index.css -o ./dist/index.css && \
-    go build -v -o /bin/files-web-server cmd/files-web-server/main.go
+    go build -v --ldflags '-linkmode=external -extldflags=-static' -o /bin/files-web-server cmd/files-web-server/main.go
 
 ENTRYPOINT ["/bin/files-web-server"]
